@@ -197,12 +197,6 @@ class MethodNotFound(BitGoException):
 class NotAcceptable(BitGoException):
     pass
 
-def create_keychain(network):
-    entropy = "".join([chr(random.getrandbits(8)) for i in range(32)])
-    key = BIP32Node.from_master_secret(entropy, network)
-    private = key.wallet_key(as_private=True).encode("utf-8")
-    public = key.wallet_key(as_private=False).encode("utf-8")
-    return {"xpub": public, "xprv": private}
 
 class Keychains(object):
     def __init__(self, proxy):
@@ -218,7 +212,11 @@ class Keychains(object):
         network = "BTC"
         if not self.proxy.use_production:
             network = "XTN"
-        return create_keychain(network)
+        entropy = "".join([chr(random.getrandbits(8)) for i in range(32)])
+        key = BIP32Node.from_master_secret(entropy, network)
+        private = key.wallet_key(as_private=True).encode("utf-8")
+        public = key.wallet_key(as_private=False).encode("utf-8")
+        return {"xpub": public, "xprv": private}
 
     def add(self, xpub, encrypted_xprv=None):
         data = {"xpub": xpub}
