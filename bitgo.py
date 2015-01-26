@@ -32,7 +32,6 @@ import hashlib
 import urlparse
 from twisted.internet import reactor
 from twisted.internet.defer import inlineCallbacks, returnValue
-import util
 from twisted.python import log
 from pprint import pprint
 import string
@@ -421,9 +420,10 @@ class BitGo(object):
         self.wallets = Wallets(self)
 
     def encrypt(self, plaintext, passphrase):
-        return SJCL().encrypt(plaintext, passphrase, count=1000)
+        return json.dumps(SJCL().encrypt(plaintext, passphrase, count=1000))
 
     def decrypt(self, ciphertext, passphrase):
+        ciphertext = json.loads(ciphertext)
         return SJCL().decrypt(ciphertext, passphrase)
 
     def market(self):
