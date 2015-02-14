@@ -197,7 +197,6 @@ class MethodNotFound(BitGoException):
 class NotAcceptable(BitGoException):
     pass
 
-
 class Keychains(object):
     def __init__(self, proxy):
         self.proxy = proxy
@@ -258,17 +257,20 @@ class Wallet(object):
             result = yield self.proxy.keychains.get(keychain["xpub"])
             encrypted = result.get("encryptedXprv")
             if encrypted:
-                returnValue(encrypted)
+                keychain['encryptedXprv'] = encrypted
+                returnValue(keychain)
         else:
             raise BitGoException("No encrypted keychains on this wallet.")
 
 
     @inlineCallbacks
     def sendCoins(self, address, amount, passphrase, confirms=None):
-        encrypted_xprv = self.getEncryptedUserKeychain()
+        keychain = yield self.getEncryptedUserKeychain()
+        encrypted_xprv = keychain['encryptedXprv']
         xprv = self.proxy.decrypt(encrypted_xprv, passphrase)
+        keychain['xprv'] = xprv
         tx = yield self.createTransaction(address, amount,
-                {"xprv":xprv}, fee="standard")
+                keychain, fee="standard")
         result = yield self.sendTransaction(tx=tx['tx'])
         returnValue({'tx': result['transaction'],
                      'hash': result['transactionHash'],
@@ -332,8 +334,8 @@ class Wallet(object):
         returnValue({'tx': tx.as_hex(),
                      'fee': tx.fee()})
 
-    def sendTransaction(self, tx, otp):
-        return self._call("POST", "api/v1/tx/send", {"tx": tx, "otp": otp})
+    def sendTransaction(self, tx):
+        return self._call("POST", "api/v1/tx/send", {"tx": tx})
 
     def setPolicy(self, policy):
         return self._call("POST", "api/v1/wallet/%s/policy" % self.id,
@@ -535,9 +537,8 @@ class BitGo(object):
                                    'client_id': self.client_id,
                                    'client_secret': self.client_secret,
                                    'grant_type': 'authorization_code'})
-        self.token = token_result['access_token'].encode('utf-8')
-        self.token_expiration = datetime.fromtimestamp(result['expires_at'])
-        returnValue({'token': self.token,
-                     'expiration': util.dt_to_timestamp(self.token_expiration)})
+        self.token = result['access_token'].encode('utf-8')
+        self.token_expiration = datetime.utcfromtimestamp(result['expires_at'])
+        returnValue(result)
 
 
