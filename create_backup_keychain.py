@@ -21,10 +21,4 @@ Store the following backup keychain OFFLINE and in a SECURE LOCATION:
 
     pprint(keychain)
 
-    print """
-Submit the following public key to the MultiSig Wallet Initialization form on the Sputnik administration interface:
-
-"""
-
-    print keychain['xpub']
 
