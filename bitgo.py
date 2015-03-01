@@ -363,7 +363,7 @@ class Wallets(object):
     def list(self):
         def decode(result):
             wallets = result["wallets"]
-            return {"wallets": {k: self._decode(v) for k, v in wallets.items()}}
+            return {"wallets": {wallet["id"]: self._decode(wallet) for wallet in wallets}}
 
         return self._call("GET", "api/v1/wallet").addCallback(decode)
 
